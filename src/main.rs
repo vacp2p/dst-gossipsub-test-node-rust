@@ -137,6 +137,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                          .build()) {
                 Ok(..) => {
                     println!("Dial sent to {}", addrs);
+                    connected += 1;
                     break;
                 }
                 Err(e) => {
