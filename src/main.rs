@@ -90,7 +90,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Listen on all interfaces and whatever port the OS assigns
     swarm.listen_on("/ip4/0.0.0.0/tcp/5000".parse()?)?;
 
-    let my_id = env::var("PEERNUMBER").expect("$PEERNUMBER is not set");
+    let my_id: i32= hostname.expect("No hostname").trim_start_matches("pod-").parse().unwrap();
 
     println!("{}, {}", my_id, swarm.local_peer_id().to_string());
     println!("Waiting 30 seconds for node building...");
@@ -105,7 +105,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut connected = 0;
     for element in &array {
         if connected >= connect_to.parse().unwrap() { break; };
-        if *element == my_id.parse::<usize>().unwrap() { continue; }
+        if *element == my_id as usize { continue; }
         let t_address = format!("pod-{}:5000", element);
         println!("Will connect to peer {element}");
         println!("Service: {element}");
@@ -172,8 +172,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Mesh size: {:?}", swarm.network_info().connection_counters());
 
-    let turn_to_publish = my_id.parse::<i32>().unwrap();
-    println!("Publishing turn is: {:?}", turn_to_publish);
+    println!("Publishing turn is: {}", my_id);
 
     let rate = env::var("MSGRATE").expect("$MSGRATE is not set").parse().unwrap();
     let mut interval = time::interval(Duration::from_millis(rate));
@@ -184,7 +183,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     loop {
         select! {
             _ =  interval.tick() => {
-                if counter % int_peers == turn_to_publish {
+                if counter % int_peers == my_id {
                     let duration_since_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
                     let timestamp_nanos = duration_since_epoch.as_nanos();
                     // Convert the timestamp to little-endian bytes
